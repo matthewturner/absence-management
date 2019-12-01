@@ -6,12 +6,12 @@
  */
 function readRows() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var rows = sheet.getDataRange();
-  var numRows = rows.getNumRows();
-  var values = rows.getValues();
+  var range = sheet.getDataRange();
+  var numRows = range.getNumRows();
+  var rows = range.getValues();
 
-  for (var i = 0; i <= numRows - 1; i++) {
-    var row = values[i];
+  for (var i = 0; i < numRows; i++) {
+    var row = rows[i];
     Logger.log(row);
   }
 };
@@ -32,6 +32,10 @@ function checkEventForActiveRow() {
   var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = CalendarApp.getDefaultCalendar();
   
+  checkEventForRow(entry, calendar);
+};
+
+function checkEventForRow(entry, calendar) {
   var event = entry.findEvent(calendar);
   if (event === null) {
     entry.markCalendarConflict();
@@ -45,11 +49,31 @@ function checkEventForActiveRow() {
     entry.markCalendarConflict();
     return;
   }
-  if (event.getStartTime().getTime() !== entry.getStartTime().getTime() || event.getEndTime().getTime() !== entry.getEndTime().getTime()) {
+  if (event.getStartTime().getTime() !== entry.getStartTime().getTime()) {
+    entry.markCalendarConflict();
+    return;
+  }
+  if (event.getEndTime().getTime() !== entry.getEndTime().getTime()) {
     entry.markCalendarConflict();
     return;
   }
   entry.clearCalendarConflict();
+};
+
+function checkEventsForAllRows() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var calendar = CalendarApp.getDefaultCalendar();
+  var range = sheet.getDataRange();
+  var numRows = range.getNumRows();
+  var rows = range.getValues();
+
+  for (var rowIndex = 0; rowIndex < numRows; rowIndex++) {
+    var row = rows[rowIndex];
+    if (row[0] !== "Bank holiday" && row[0] !== "Type" && row[0] !== "") {
+      var entry = new AbsenceEntry(sheet, rowIndex + 1);
+      checkEventForRow(entry, calendar);
+    }
+  }
 };
 
 function syncEventForActiveRow() {
@@ -78,6 +102,20 @@ function syncEventForActiveRow() {
     event.setTime(entry.getStartTime(), entry.getEndTime());
   }
   
+  entry.clearCalendarConflict();
+};
+
+function deleteEventForActiveRow() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var rowIndex = sheet.getActiveCell().getRowIndex();
+  var entry = new AbsenceEntry(sheet, rowIndex);
+  var calendar = CalendarApp.getDefaultCalendar();
+  
+  var event = entry.findEvent(calendar);
+  if (event !== null) {
+    event.deleteEvent();
+  }
+  entry.setCalendarId(null);
   entry.clearCalendarConflict();
 };
 
@@ -171,7 +209,16 @@ var AbsenceEntry = function(sheet, rowIndex) {
  */
 function onOpen() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
-  var entries = [{
+  var entries = [
+                 {
+                   name: "Check all rows",
+                   functionName: "checkEventsForAllRows"
+                 },
+                 {
+                   name: "Configure active row",
+                   functionName: "configureActiveRow"
+                 },
+                 {
                    name : "Insert event for active row",
                    functionName : "insertEventForActiveRow"
                  },
@@ -184,8 +231,8 @@ function onOpen() {
                    functionName: "syncEventForActiveRow"
                  },
                  {
-                   name: "Configure active row",
-                   functionName: "configureActiveRow"
+                   name: "Delete event for active row",
+                   functionName: "deleteEventForActiveRow"
                  }];
   sheet.addMenu("Calendar", entries);
 };
