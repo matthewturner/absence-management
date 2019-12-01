@@ -20,63 +20,125 @@ function readRows() {
 
 function insertEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var numRows = 1;
   var startRow = sheet.getActiveCell().getRowIndex();
-  var dataRange = sheet.getRange(startRow, 1, numRows, 5);
-  var currentRow = dataRange.getValues()[0];
-  var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
-  var cal = CalendarApp.getDefaultCalendar();
-  var title = currentRow[0];
-  var tstart = new Date(currentRow[2]);
-  var tstop = new Date(currentRow[4]);
-  tstop.setDate(tstop.getDate() + 1)
-  var event = cal.createEvent(title, tstart, tstop);
-  var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
-  calendarRange.setValue(event.getId());
-  calendarRange.setBackground("White");
+  var entry = new AbsenceEntry(sheet, startRow);
+  var calendar = CalendarApp.getDefaultCalendar();
+  var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getEndTime());
+  entry.setCalendarId(event.getId());
+  entry.clearCalendarConflict();
 };
 
 function checkEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var numRows = 1;
   var startRow = sheet.getActiveCell().getRowIndex();
-  var dataRange = sheet.getRange(startRow, 1, numRows, 5);
-  var currentRow = dataRange.getValues()[0];
-  var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
-  var calendarId = calendarRange.getValue();
-  var cal = CalendarApp.getDefaultCalendar();
-  var title = currentRow[0];
-  var tstart = new Date(currentRow[2]);
-  var tstop = new Date(currentRow[4]);
-  tstop.setDate(tstop.getDate() + 1);
-  var event = findEvent(cal, calendarId, tstart, tstop, title);
+  var calendar = CalendarApp.getDefaultCalendar();
+  
+  var entry = new AbsenceEntry(sheet, startRow);
+  
+  var event = entry.findEvent(calendar);
   if (event === null) {
-    calendarRange.setBackground("Red");
+    entry.markCalendarConflict();
     return;
   }
-  if (calendarRange.getValue() !== title) {
-    calendarRange.setValue(event.getId());
+  if (entry.getCalendarId() !== event.getId()) {
+    entry.markCalendarConflict();
+    return;
   }
-  if (event.getStartTime().getTime() == tstart.getTime() && event.getEndTime().getTime() == tstop.getTime()) {
-    calendarRange.setBackground("White");
-  } else {
-    calendarRange.setBackground("Red");
+  if (entry.getTitle() !== event.getTitle()) {
+    entry.markCalendarConflict();
+    return;
   }
+  if (event.getStartTime().getTime() !== entry.getStartTime().getTime() || event.getEndTime().getTime() !== entry.getEndTime().getTime()) {
+    entry.markCalendarConflict();
+    return;
+  }
+  entry.clearCalendarConflict();
 };
 
-function findEvent(calendar, calendarId, startTime, endTime, title) {
-  var event = calendar.getEventById(calendarId);
-  if (event !== null) {
-    return event;
+function syncEventForActiveRow() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var startRow = sheet.getActiveCell().getRowIndex();
+  var calendar = CalendarApp.getDefaultCalendar();
+  
+  var entry = new AbsenceEntry(sheet, startRow);
+  
+  var event = entry.findEvent(calendar);
+  if (event === null) {
+    var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getEndTime());
+    entry.setCalendarId(event.getId());
+    entry.clearCalendarConflict();
+    return;
   }
-  var events = calendar.getEvents(startTime, endTime);
-  for (var i = 0; i < events.length; i++) {
-    var candidateEvent = events[i];
-    if (candidateEvent.getTitle() === title) {
-      return candidateEvent;
+  
+  if (entry.getCalendarId() !== event.getId()) {
+    entry.setCalendarId(event.getId());
+  }
+  
+  if (entry.getTitle() !== event.getTitle()) {
+    event.setTitle(entry.getTitle());
+  }
+  
+  if (event.getStartTime().getTime() !== entry.getStartTime().getTime() || event.getEndTime().getTime() !== entry.getEndTime().getTime()) {
+    event.setTime(entry.getStartTime(), entry.getEndTime());
+  }
+  
+  entry.clearCalendarConflict();
+};
+
+var AbsenceEntry = function(sheet, rowIndex) {
+  this.sheet = sheet;
+  this.rowIndex = rowIndex;
+  var numRows = 1;
+  this.dataRange = sheet.getRange(rowIndex, 1, numRows, 5);
+  this.currentRow = this.dataRange.getValues()[0];
+  this.calendarCell = sheet.getRange(rowIndex, GOOGLE_CALENDAR_COLUMN_INDEX);
+  
+  this.getTitle = function() {
+    return this.currentRow[0];
+  };
+  
+  this.getCalendarId = function() {
+    var calendarId = this.calendarCell.getValue();
+    return calendarId;
+  };
+  
+  this.setCalendarId = function(calendarId) {
+    this.calendarCell.setValue(calendarId);
+  };
+  
+  this.getStartTime = function() {
+    var tstart = new Date(this.currentRow[2]);
+    return tstart;
+  };
+  
+  this.getEndTime = function() {
+    var tstop = new Date(this.currentRow[4]);
+    tstop.setDate(tstop.getDate() + 1);
+    return tstop;
+  };
+  
+  this.markCalendarConflict = function() {
+    this.calendarCell.setBackground("Red");
+  };
+  
+  this.clearCalendarConflict = function() {
+    this.calendarCell.setBackground("White");
+  };
+  
+  this.findEvent = function(calendar) {
+    var event = calendar.getEventById(this.getCalendarId());
+    if (event !== null) {
+      return event;
     }
-  }
-  return null;
+    var events = calendar.getEvents(this.getStartTime(), this.getEndTime());
+    for (var i = 0; i < events.length; i++) {
+      var candidateEvent = events[i];
+      if (candidateEvent.getTitle() === this.getTitle()) {
+        return candidateEvent;
+      }
+    }
+    return null;
+  };
 };
 
 /**
@@ -96,6 +158,10 @@ function onOpen() {
                  {
                    name: "Check event for active row",
                    functionName: "checkEventForActiveRow"
+                 },
+                 {
+                   name: "Sync event for active row",
+                   functionName: "syncEventForActiveRow"
                  }];
   sheet.addMenu("Calendar", entries);
 };
