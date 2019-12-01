@@ -1,5 +1,3 @@
-var GOOGLE_CALENDAR_COLUMN_INDEX = 8;
-
 /**
  * Retrieves all the rows in the active spreadsheet that contain data and logs the
  * values for each row.
@@ -20,8 +18,8 @@ function readRows() {
 
 function insertEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var startRow = sheet.getActiveCell().getRowIndex();
-  var entry = new AbsenceEntry(sheet, startRow);
+  var rowIndex = sheet.getActiveCell().getRowIndex();
+  var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = CalendarApp.getDefaultCalendar();
   var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getEndTime());
   entry.setCalendarId(event.getId());
@@ -30,10 +28,9 @@ function insertEventForActiveRow() {
 
 function checkEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var startRow = sheet.getActiveCell().getRowIndex();
+  var rowIndex = sheet.getActiveCell().getRowIndex();
+  var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = CalendarApp.getDefaultCalendar();
-  
-  var entry = new AbsenceEntry(sheet, startRow);
   
   var event = entry.findEvent(calendar);
   if (event === null) {
@@ -57,10 +54,9 @@ function checkEventForActiveRow() {
 
 function syncEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var startRow = sheet.getActiveCell().getRowIndex();
+  var rowIndex = sheet.getActiveCell().getRowIndex();
+  var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = CalendarApp.getDefaultCalendar();
-  
-  var entry = new AbsenceEntry(sheet, startRow);
   
   var event = entry.findEvent(calendar);
   if (event === null) {
@@ -85,11 +81,20 @@ function syncEventForActiveRow() {
   entry.clearCalendarConflict();
 };
 
+function configureActiveRow() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var rowIndex = sheet.getActiveCell().getRowIndex();
+  var entry = new AbsenceEntry(sheet, rowIndex);
+  
+  entry.configure();
+};
+
 var AbsenceEntry = function(sheet, rowIndex) {
+  var GOOGLE_CALENDAR_COLUMN_INDEX = 8;
+  var NUMBER_OF_ROWS = 1;
   this.sheet = sheet;
   this.rowIndex = rowIndex;
-  var numRows = 1;
-  this.dataRange = sheet.getRange(rowIndex, 1, numRows, 5);
+  this.dataRange = sheet.getRange(rowIndex, 1, NUMBER_OF_ROWS, 5);
   this.currentRow = this.dataRange.getValues()[0];
   this.calendarCell = sheet.getRange(rowIndex, GOOGLE_CALENDAR_COLUMN_INDEX);
   
@@ -123,6 +128,21 @@ var AbsenceEntry = function(sheet, rowIndex) {
   
   this.clearCalendarConflict = function() {
     this.calendarCell.setBackground("White");
+  };
+  
+  this.configure = function() {
+    var startDayCell = sheet.getRange(rowIndex, 2);
+    startDayCell.setFormula("=text(C" + rowIndex + ", \"ddd\")");
+    var startTimeCell = sheet.getRange(rowIndex, 3);
+    startTimeCell.setNumberFormat("dd/MM/YYYY");
+    
+    var startDayCell = sheet.getRange(rowIndex, 4);
+    startDayCell.setFormula("=text(E" + rowIndex + ", \"ddd\")");
+    var endTimeCell = sheet.getRange(rowIndex, 5);
+    endTimeCell.setNumberFormat("dd/MM/YYYY");
+    
+    var dayCountCell = sheet.getRange(rowIndex, 6);
+    dayCountCell.setFormula("=E" + rowIndex + " - C" + rowIndex + " + 1");
   };
   
   this.findEvent = function(calendar) {
@@ -162,6 +182,10 @@ function onOpen() {
                  {
                    name: "Sync event for active row",
                    functionName: "syncEventForActiveRow"
+                 },
+                 {
+                   name: "Configure active row",
+                   functionName: "configureActiveRow"
                  }];
   sheet.addMenu("Calendar", entries);
 };
