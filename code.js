@@ -20,22 +20,20 @@ function readRows() {
 
 function insertEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
-  var numRows = 1;   // Number of rows to process
+  var numRows = 1;
   var startRow = sheet.getActiveCell().getRowIndex();
   var dataRange = sheet.getRange(startRow, 1, numRows, 5);
-  var data = dataRange.getValues();
+  var currentRow = dataRange.getValues()[0];
+  var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
   var cal = CalendarApp.getDefaultCalendar();
-  for (i in data) {
-    var row = data[i];
-    var title = row[0];
-    var tstart = row[2];
-    var tstop = new Date(row[4]);
-    tstop.setDate(tstop.getDate() + 1)
-    var event = cal.createEvent(title, tstart, tstop);
-    var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
-    calendarRange.setValue(event.getId());
-    calendarRange.setBackground("White");
- }
+  var title = currentRow[0];
+  var tstart = new Date(currentRow[2]);
+  var tstop = new Date(currentRow[4]);
+  tstop.setDate(tstop.getDate() + 1)
+  var event = cal.createEvent(title, tstart, tstop);
+  var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
+  calendarRange.setValue(event.getId());
+  calendarRange.setBackground("White");
 };
 
 function checkEventForActiveRow() {
@@ -43,27 +41,42 @@ function checkEventForActiveRow() {
   var numRows = 1;
   var startRow = sheet.getActiveCell().getRowIndex();
   var dataRange = sheet.getRange(startRow, 1, numRows, 5);
-  var data = dataRange.getValues();
+  var currentRow = dataRange.getValues()[0];
   var calendarRange = sheet.getRange(startRow, GOOGLE_CALENDAR_COLUMN_INDEX);
   var calendarId = calendarRange.getValue();
   var cal = CalendarApp.getDefaultCalendar();
-  var event = cal.getEventById(calendarId);
+  var title = currentRow[0];
+  var tstart = new Date(currentRow[2]);
+  var tstop = new Date(currentRow[4]);
+  tstop.setDate(tstop.getDate() + 1);
+  var event = findEvent(cal, calendarId, tstart, tstop, title);
   if (event === null) {
     calendarRange.setBackground("Red");
     return;
   }
-  for (i in data) {
-    var row = data[i];
-    var title = row[0];
-    var tstart = new Date(row[2]);
-    var tstop = new Date(row[4]);
-    tstop.setDate(tstop.getDate() + 1)
-    if (event.getStartTime().getTime() == tstart.getTime() && event.getEndTime().getTime() == tstop.getTime()) {
-      calendarRange.setBackground("White");
-    } else {
-      calendarRange.setBackground("Red");
+  if (calendarRange.getValue() !== title) {
+    calendarRange.setValue(event.getId());
+  }
+  if (event.getStartTime().getTime() == tstart.getTime() && event.getEndTime().getTime() == tstop.getTime()) {
+    calendarRange.setBackground("White");
+  } else {
+    calendarRange.setBackground("Red");
+  }
+};
+
+function findEvent(calendar, calendarId, startTime, endTime, title) {
+  var event = calendar.getEventById(calendarId);
+  if (event !== null) {
+    return event;
+  }
+  var events = calendar.getEvents(startTime, endTime);
+  for (var i = 0; i < events.length; i++) {
+    var candidateEvent = events[i];
+    if (candidateEvent.getTitle() === title) {
+      return candidateEvent;
     }
   }
+  return null;
 };
 
 /**
