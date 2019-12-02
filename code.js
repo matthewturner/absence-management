@@ -21,10 +21,9 @@ function insertEventForActiveRow() {
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
-  var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getEndTime());
+  var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getAdjustedEndTime(calendar.getAdjustment()));
   entry.setCalendarId(event.getId());
-  var calendarType = "google";
-  entry.clearCalendarConflict(calendarType);
+  entry.clearCalendarConflict(calendar.getType());
 };
 
 function checkEventForActiveRow() {
@@ -34,11 +33,12 @@ function checkEventForActiveRow() {
   var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var hrCalendar = new HrCalendar(sheet);
   
-  checkEventForRow(entry, calendar, "google");
-  checkEventForRow(entry, hrCalendar, "hr");
+  checkEventForRow(entry, calendar);
+  checkEventForRow(entry, hrCalendar);
 };
 
-function checkEventForRow(entry, calendar, calendarType) {
+function checkEventForRow(entry, calendar) {
+  var calendarType = calendar.getType();
   var event = entry.findEvent(calendar, calendarType);
   if (event === null) {
     Logger.log("Event missing");
@@ -62,11 +62,7 @@ function checkEventForRow(entry, calendar, calendarType) {
     entry.markCalendarConflict(calendarType);
     return;
   }
-  var entryEndTime = entry.getEndTime();
-  if (calendar.requiresDayAdjustment()) {
-    entryEndTime.setDate(entryEndTime.getDate() + 1);
-  }
-  if (event.getEndTime().getTime() !== entryEndTime.getTime()) {
+  if (event.getEndTime().getTime() !== entry.getAdjustedEndTime(calendar.getAdjustment()).getTime()) {
     Logger.log("End date mismatch");
     entry.markCalendarConflict(calendarType);
     return;
@@ -86,8 +82,8 @@ function checkEventsForAllRows() {
     var row = rows[rowIndex];
     if (row[0] !== "Bank holiday" && row[0] !== "Type" && row[0] !== "") {
       var entry = new AbsenceEntry(sheet, rowIndex + 1);
-      checkEventForRow(entry, calendar, "google");
-      checkEventForRow(entry, hrCalendar, "hr");
+      checkEventForRow(entry, calendar);
+      checkEventForRow(entry, hrCalendar);
     }
   }
 };
@@ -97,11 +93,11 @@ function syncEventForActiveRow() {
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
-  var calendarType = "google";
+  var calendarType = calendar.getType();
   
   var event = entry.findEvent(calendar);
   if (event === null) {
-    var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getEndTime());
+    var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getAdjustedEndTime(calendar.getAdjustment()));
     entry.setCalendarId(event.getId());
     entry.clearCalendarConflict(calendarType);
     return;
@@ -115,7 +111,7 @@ function syncEventForActiveRow() {
     event.setTitle(entry.getTitle());
   }
   
-  if (event.getStartTime().getTime() !== entry.getStartTime().getTime() || event.getEndTime().getTime() !== entry.getEndTime().getTime()) {
+  if (event.getStartTime().getTime() !== entry.getStartTime().getTime() || event.getEndTime().getTime() !== entry.getAdjustedEndTime(calendar.getAdjustment()).getTime()) {
     event.setTime(entry.getStartTime(), entry.getEndTime());
   }
   
@@ -133,8 +129,7 @@ function deleteEventForActiveRow() {
     event.deleteEvent();
   }
   entry.setCalendarId(null);
-  var calendarType = "google";
-  entry.clearCalendarConflict(calendarType);
+  entry.clearCalendarConflict(calendar.getType());
 };
 
 function configureActiveRow() {
@@ -163,7 +158,15 @@ var GoogleCalendar = function(calendar) {
   this.supportsId = function() {
     return true;
   };
-}
+  
+  this.getAdjustment = function() {
+    return 1;
+  };
+  
+  this.getType = function() {
+    return "google";
+  };
+};
 
 var HrCalendar = function(sheet) {
   this.hrSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheet.getSheetName() + " - HR");
@@ -206,6 +209,14 @@ var HrCalendar = function(sheet) {
   
   this.supportsId = function() {
     return false;
+  };
+  
+  this.getAdjustment = function() {
+    return 0;
+  };
+  
+  this.getType = function() {
+    return "hr";
   };
 }
 
@@ -271,8 +282,15 @@ var AbsenceEntry = function(sheet, rowIndex) {
   
   this.getEndTime = function() {
     var tstop = new Date(this.currentRow[4]);
-    // tstop.setDate(tstop.getDate());
     return tstop;
+  };
+  
+  this.getAdjustedEndTime = function(adjustment) {
+    var entryEndTime = this.getEndTime();
+    if (adjustment > 0) {
+      entryEndTime.setDate(entryEndTime.getDate() + adjustment);
+    }
+    return entryEndTime;
   };
   
   this.markCalendarConflict = function(calendarType) {
