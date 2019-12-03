@@ -32,7 +32,7 @@ function checkEventForActiveRow() {
   var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var hrCalendar = new HrCalendar(sheet);
-
+  
   new Synchronizer(entry, calendar).markSynchronized();
   new Synchronizer(entry, hrCalendar).markSynchronized();
 };
@@ -61,28 +61,8 @@ function syncEventForActiveRow() {
   var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var calendarType = calendar.getType();
-
-  var event = entry.findEvent(calendar);
-  if (event === null) {
-    var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getAdjustedEndTime(calendar.getAdjustment()));
-    entry.setCalendarId(calendarType, event.getId());
-    entry.clearCalendarConflict(calendarType);
-    return;
-  }
-
-  if (entry.getCalendarId(calendarType) !== event.getId()) {
-    entry.setCalendarId(event.getId());
-  }
-
-  if (entry.getTitle() !== event.getTitle()) {
-    event.setTitle(entry.getTitle());
-  }
-
-  if (event.getStartTime().getTime() !== entry.getStartTime().getTime() || event.getEndTime().getTime() !== entry.getAdjustedEndTime(calendar.getAdjustment()).getTime()) {
-    event.setTime(entry.getStartTime(), entry.getEndTime());
-  }
-
-  entry.clearCalendarConflict(calendarType);
+  
+  new Synchronizer(entry, calendar).synchronize();
 };
 
 function deleteEventForActiveRow() {
@@ -90,12 +70,12 @@ function deleteEventForActiveRow() {
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
   var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
-
+  
   var event = entry.findEvent(calendar);
   if (event !== null) {
     event.deleteEvent();
   }
-
+  
   var calendarType = calendar.getType();
   entry.setCalendarId(calendarType, null);
   entry.clearCalendarConflict(calendarType);
@@ -105,7 +85,7 @@ function configureActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
-
+  
   entry.configure();
 };
 
@@ -120,29 +100,29 @@ function configureActiveRow() {
 function onOpen() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var entries = [
-    {
-      name: "Check all rows",
-      functionName: "checkEventsForAllRows"
-    },
-    {
-      name: "Configure active row",
-      functionName: "configureActiveRow"
-    },
-    {
-      name: "Insert event for active row",
-      functionName: "insertEventForActiveRow"
-    },
-    {
-      name: "Check event for active row",
-      functionName: "checkEventForActiveRow"
-    },
-    {
-      name: "Sync event for active row",
-      functionName: "syncEventForActiveRow"
-    },
-    {
-      name: "Delete event for active row",
-      functionName: "deleteEventForActiveRow"
-    }];
+                 {
+                   name: "Check all rows",
+                   functionName: "checkEventsForAllRows"
+                 },
+                 {
+                   name: "Configure active row",
+                   functionName: "configureActiveRow"
+                 },
+                 {
+                   name: "Insert event for active row",
+                   functionName: "insertEventForActiveRow"
+                 },
+                 {
+                   name: "Check event for active row",
+                   functionName: "checkEventForActiveRow"
+                 },
+                 {
+                   name: "Sync event for active row",
+                   functionName: "syncEventForActiveRow"
+                 },
+                 {
+                   name: "Delete event for active row",
+                   functionName: "deleteEventForActiveRow"
+                 }];
   sheet.addMenu("Calendar", entries);
 };
