@@ -26,8 +26,9 @@ var AbsenceEntry = function (sheet, rowIndex) {
         return calendarId;
     };
 
-    this.setCalendarId = function (calendarId) {
-        this.calendarCell.setValue(calendarId);
+    this.setCalendarId = function (calendarType, calendarId) {
+        var calendarCell = this.getCalendarCell(calendarType);
+        calendarCell.setValue(calendarId);
     };
 
     this.getStartTime = function () {

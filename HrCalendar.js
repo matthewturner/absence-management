@@ -58,14 +58,17 @@ var HrCalendarEvent = function (row) {
     };
 
     this.getTitle = function () {
+        var title = this.row[2];
         return this.row[2];
     };
 
     this.getStartTime = function () {
+        var title = new Date(this.row[4]);
         return new Date(this.row[4]);
     };
 
     this.getEndTime = function () {
+        var title = new Date(this.row[5]);
         return new Date(this.row[5])
     };
 };

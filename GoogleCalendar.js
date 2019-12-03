@@ -1,6 +1,10 @@
 var GoogleCalendar = function (calendar) {
     this.calendar = calendar;
 
+    this.createEvent = function (title, startTime, endTime) {
+        return this.calendar.createEvent(title, startTime, endTime);
+    }
+
     this.getEventById = function (calendarId) {
         return this.calendar.getEventById(calendarId);
     };

@@ -65,7 +65,7 @@ function syncEventForActiveRow() {
   var event = entry.findEvent(calendar);
   if (event === null) {
     var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getAdjustedEndTime(calendar.getAdjustment()));
-    entry.setCalendarId(event.getId());
+    entry.setCalendarId(calendarType, event.getId());
     entry.clearCalendarConflict(calendarType);
     return;
   }
@@ -95,8 +95,10 @@ function deleteEventForActiveRow() {
   if (event !== null) {
     event.deleteEvent();
   }
-  entry.setCalendarId(null);
-  entry.clearCalendarConflict(calendar.getType());
+
+  var calendarType = calendar.getType();
+  entry.setCalendarId(calendarType, null);
+  entry.clearCalendarConflict(calendarType);
 };
 
 function configureActiveRow() {
