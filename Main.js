@@ -20,63 +20,91 @@ function insertEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
-  var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
+  var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var event = calendar.createEvent(entry.getTitle(), entry.getStartTime(), entry.getAdjustedEndTime(calendar.getAdjustment()));
-  entry.setCalendarId(event.getId());
-  entry.clearCalendarConflict(calendar.getType());
+  var calendarType = googleCalendar.getType();
+  entry.setCalendarId(calendarType, event.getId());
+  entry.clearCalendarConflict(calendarType);
 };
 
 function checkEventForActiveRow() {
+  if (!authorizeIfRequired()) {
+    return;
+  }
+  
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
-  var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
+  var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var hrCalendar = new HrCalendar(sheet);
+  var office365Calendar = new Office365Calendar();
   
-  new Synchronizer(entry, calendar).markSynchronized();
+  new Synchronizer(entry, googleCalendar).markSynchronized();
   new Synchronizer(entry, hrCalendar).markSynchronized();
+  new Synchronizer(entry, office365Calendar).markSynchronized();
 };
 
 function checkEventsForAllRows() {
+  if (!authorizeIfRequired()) {
+    return;
+  }
+  
   var sheet = SpreadsheetApp.getActiveSheet();
-  var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
+  var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var hrCalendar = new HrCalendar(sheet);
+  var office365Calendar = new Office365Calendar();
   var range = sheet.getDataRange();
   var numRows = range.getNumRows();
   var rows = range.getValues();
 
   for (var rowIndex = 0; rowIndex < numRows; rowIndex++) {
     var row = rows[rowIndex];
-    if (row[0] !== "Bank holiday" && row[0] !== "Type" && row[0] !== "") {
-      var entry = new AbsenceEntry(sheet, rowIndex + 1);
-      new Synchronizer(entry, calendar).markSynchronized();
-      new Synchronizer(entry, hrCalendar).markSynchronized();
+    switch(row[0]) {
+      case "Type":
+      case "":
+        break;
+      case "Bank holiday":
+        var entry = new AbsenceEntry(sheet, rowIndex + 1);
+        entry.clearCalendarConflict(googleCalendar.getType());
+        entry.clearCalendarConflict(hrCalendar.getType());
+        entry.clearCalendarConflict(office365Calendar.getType());
+        break;
+      default:
+        var entry = new AbsenceEntry(sheet, rowIndex + 1);
+        new Synchronizer(entry, googleCalendar).markSynchronized();
+        new Synchronizer(entry, hrCalendar).markSynchronized();
+        new Synchronizer(entry, office365Calendar).markSynchronized();
+        break;
     }
   }
 };
 
 function syncEventForActiveRow() {
+  if (!authorizeIfRequired()) {
+    return;
+  }
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
-  var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
-  var calendarType = calendar.getType();
+  var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
+  var office365Calendar = new Office365Calendar();
   
-  new Synchronizer(entry, calendar).synchronize();
+  new Synchronizer(entry, googleCalendar).synchronize();
+  new Synchronizer(entry, office365Calendar).synchronize();
 };
 
 function deleteEventForActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
-  var calendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
+  var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   
-  var event = entry.findEvent(calendar);
+  var event = entry.findEvent(googleCalendar);
   if (event !== null) {
     event.deleteEvent();
   }
   
-  var calendarType = calendar.getType();
+  var calendarType = googleCalendar.getType();
   entry.setCalendarId(calendarType, null);
   entry.clearCalendarConflict(calendarType);
 };
@@ -123,6 +151,15 @@ function onOpen() {
                  {
                    name: "Delete event for active row",
                    functionName: "deleteEventForActiveRow"
-                 }];
+                 },
+                 {
+                   name: "Authorize access to Office 365",
+                   functionName: "authorizeIfRequired"
+                 },
+                 {
+                   name: "Logout from Office 365",
+                   functionName: "logout"
+                 }
+                 ];
   sheet.addMenu("Calendar", entries);
 };
