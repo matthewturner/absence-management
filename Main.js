@@ -41,14 +41,14 @@ function checkEventForActiveRow() {
   if (!authorizeIfRequired()) {
     return;
   }
-
+  
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
   var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var hrCalendar = new HrCalendar(sheet);
   var office365Calendar = new Office365Calendar();
-
+  
   new Synchronizer(entry, googleCalendar).markSynchronized();
   new Synchronizer(entry, hrCalendar).markSynchronized();
   new Synchronizer(entry, office365Calendar).markSynchronized();
@@ -58,7 +58,7 @@ function checkEventsForAllRows() {
   if (!authorizeIfRequired()) {
     return;
   }
-
+  
   var sheet = SpreadsheetApp.getActiveSheet();
   var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var hrCalendar = new HrCalendar(sheet);
@@ -76,14 +76,14 @@ function checkEventsForAllRows() {
       case "Bank holiday":
         var entry = new AbsenceEntry(sheet, rowIndex + 1);
         entry.clearCalendarConflict(googleCalendar.getType());
-        entry.clearCalendarConflict(hrCalendar.getType());
         entry.clearCalendarConflict(office365Calendar.getType());
+        entry.clearCalendarConflict(hrCalendar.getType());
         break;
       default:
         var entry = new AbsenceEntry(sheet, rowIndex + 1);
         new Synchronizer(entry, googleCalendar).markSynchronized();
-        new Synchronizer(entry, hrCalendar).markSynchronized();
         new Synchronizer(entry, office365Calendar).markSynchronized();
+        new Synchronizer(entry, hrCalendar).markSynchronized();
         break;
     }
   }
@@ -98,7 +98,7 @@ function syncEventForActiveRow() {
   var entry = new AbsenceEntry(sheet, rowIndex);
   var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var office365Calendar = new Office365Calendar();
-
+  
   new Synchronizer(entry, googleCalendar).synchronize();
   new Synchronizer(entry, office365Calendar).synchronize();
 };
@@ -112,27 +112,27 @@ function deleteEventForActiveRow() {
   var entry = new AbsenceEntry(sheet, rowIndex);
   var googleCalendar = new GoogleCalendar(CalendarApp.getDefaultCalendar());
   var office365Calendar = new Office365Calendar();
-
+  
   deleteEventIfRequired(googleCalendar, entry);
   deleteEventIfRequired(office365Calendar, entry);
 };
 
-function deleteEventIfRequired(calendar, entry) {
-  var event = entry.findEvent(calendar);
-  if (event !== null) {
-    event.deleteEvent();
-  }
-
-  var calendarType = calendar.getType();
-  entry.setCalendarId(calendarType, null);
-  entry.markCalendarConflict(calendarType);
+function deleteEventIfRequired(calendar, entry) { 
+    var event = entry.findEvent(calendar);
+    if (event !== null) {
+      event.deleteEvent();
+    }
+    
+    var calendarType = calendar.getType();
+    entry.setCalendarId(calendarType, null);
+    entry.markCalendarConflict(calendarType);
 };
 
 function configureActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var rowIndex = sheet.getActiveCell().getRowIndex();
   var entry = new AbsenceEntry(sheet, rowIndex);
-
+  
   entry.configure();
 };
 
@@ -147,38 +147,38 @@ function configureActiveRow() {
 function onOpen() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var entries = [
-    {
-      name: "Check all rows",
-      functionName: "checkEventsForAllRows"
-    },
-    {
-      name: "Configure active row",
-      functionName: "configureActiveRow"
-    },
-    {
-      name: "Insert event for active row",
-      functionName: "insertEventForActiveRow"
-    },
-    {
-      name: "Check event for active row",
-      functionName: "checkEventForActiveRow"
-    },
-    {
-      name: "Sync event for active row",
-      functionName: "syncEventForActiveRow"
-    },
-    {
-      name: "Delete event for active row",
-      functionName: "deleteEventForActiveRow"
-    },
-    {
-      name: "Authorize access to Office 365",
-      functionName: "authorizeIfRequired"
-    },
-    {
-      name: "Logout from Office 365",
-      functionName: "logout"
-    }
-  ];
+                 {
+                   name: "Check all rows",
+                   functionName: "checkEventsForAllRows"
+                 },
+                 {
+                   name: "Configure active row",
+                   functionName: "configureActiveRow"
+                 },
+                 {
+                   name: "Insert event for active row",
+                   functionName: "insertEventForActiveRow"
+                 },
+                 {
+                   name: "Check event for active row",
+                   functionName: "checkEventForActiveRow"
+                 },
+                 {
+                   name: "Sync event for active row",
+                   functionName: "syncEventForActiveRow"
+                 },
+                 {
+                   name: "Delete event for active row",
+                   functionName: "deleteEventForActiveRow"
+                 },
+                 {
+                   name: "Authorize access to Office 365",
+                   functionName: "authorizeIfRequired"
+                 },
+                 {
+                   name: "Logout from Office 365",
+                   functionName: "logout"
+                 }
+                 ];
   sheet.addMenu("Calendar", entries);
 };

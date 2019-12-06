@@ -7,11 +7,11 @@ var AbsenceEntry = function (sheet, rowIndex) {
   this.rowIndex = rowIndex;
   this.dataRange = sheet.getRange(rowIndex, 1, NUMBER_OF_ROWS, 5);
   this.currentRow = this.dataRange.getValues()[0];
-
+  
   this.getTitle = function () {
     return this.currentRow[0];
   };
-
+  
   this.getCalendarCell = function (calendarType) {
     switch (calendarType) {
       case "google":
@@ -20,30 +20,30 @@ var AbsenceEntry = function (sheet, rowIndex) {
         return this.sheet.getRange(rowIndex, HR_CALENDAR_COLUMN_INDEX);
       case "office365":
         return this.sheet.getRange(rowIndex, OFFICE_365_CALENDAR_COLUMN_INDEX);
-    }
+    }   
   };
-
+  
   this.getCalendarId = function (calendarType) {
     var calendarCell = this.getCalendarCell(calendarType);
     var calendarId = calendarCell.getValue();
     return calendarId;
   };
-
+  
   this.setCalendarId = function (calendarType, calendarId) {
     var calendarCell = this.getCalendarCell(calendarType);
     calendarCell.setValue(calendarId);
   };
-
+  
   this.getStartTime = function () {
     var tstart = new Date(this.currentRow[2]);
     return tstart;
   };
-
+  
   this.getEndTime = function () {
     var tstop = new Date(this.currentRow[4]);
     return tstop;
   };
-
+  
   this.getAdjustedEndTime = function (adjustment) {
     var entryEndTime = this.getEndTime();
     if (adjustment > 0) {
@@ -51,34 +51,38 @@ var AbsenceEntry = function (sheet, rowIndex) {
     }
     return entryEndTime;
   };
-
+  
   this.markCalendarConflict = function (calendarType) {
     var calendarCell = this.getCalendarCell(calendarType);
-    calendarCell.setBackground("Red");
+    if (calendarCell.getBackground() !== "#ed0301") {
+      calendarCell.setBackground("#ed0301");
+    }
   };
-
+  
   this.clearCalendarConflict = function (calendarType) {
     var calendarCell = this.getCalendarCell(calendarType);
-    calendarCell.setBackground("Green");
+    if (calendarCell.getBackground() !== "#d9ead3") {
+      calendarCell.setBackground("#d9ead3");
+    }
   };
-
+  
   this.configure = function () {
     var startDayCell = sheet.getRange(rowIndex, 2);
     startDayCell.setFormula("=text(C" + rowIndex + ", \"ddd\")");
     var startTimeCell = sheet.getRange(rowIndex, 3);
     startTimeCell.setNumberFormat("dd/MM/YYYY");
     startTimeCell.setHorizontalAlignment("right");
-
+    
     var startDayCell = sheet.getRange(rowIndex, 4);
     startDayCell.setFormula("=text(E" + rowIndex + ", \"ddd\")");
     var endTimeCell = sheet.getRange(rowIndex, 5);
     endTimeCell.setNumberFormat("dd/MM/YYYY");
     endTimeCell.setHorizontalAlignment("right");
-
+    
     var dayCountCell = sheet.getRange(rowIndex, 6);
     dayCountCell.setFormula("=E" + rowIndex + " - C" + rowIndex + " + 1");
   };
-
+  
   this.findEvent = function (calendar) {
     var calendarType = calendar.getType();
     var event = calendar.getEventById(this.getCalendarId(calendarType));
