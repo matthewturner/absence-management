@@ -3,20 +3,20 @@ function getGraphService() {
   // persisting the authorized token, so ensure it is unique within the
   // scope of the property store.
   return OAuth2.createService('graph')
-      .setAuthorizationBaseUrl("https://login.microsoftonline.com/" + getTenantId() + "/oauth2/v2.0/authorize")
-      .setTokenUrl("https://login.microsoftonline.com/" + getTenantId() + "/oauth2/v2.0/token")
+    .setAuthorizationBaseUrl("https://login.microsoftonline.com/" + getTenantId() + "/oauth2/v2.0/authorize")
+    .setTokenUrl("https://login.microsoftonline.com/" + getTenantId() + "/oauth2/v2.0/token")
 
-      // Set the client ID and secret, from the Google Developers Console.
-      .setClientId(getClientId())
-      .setClientSecret(getSecret())
+    // Set the client ID and secret, from the Google Developers Console.
+    .setClientId(getClientId())
+    .setClientSecret(getSecret())
 
-      // Set the name of the callback function in the script referenced
-      // above that should be invoked to complete the OAuth flow.
-      .setCallbackFunction('authCallback')
+    // Set the name of the callback function in the script referenced
+    // above that should be invoked to complete the OAuth flow.
+    .setCallbackFunction('authCallback')
 
-      // Set the property store where authorized tokens should be persisted.
-      .setPropertyStore(PropertiesService.getUserProperties())
-      .setScope('https://outlook.office.com/calendars.readwrite');
+    // Set the property store where authorized tokens should be persisted.
+    .setPropertyStore(PropertiesService.getUserProperties())
+    .setScope('https://outlook.office.com/calendars.readwrite');
 };
 
 function logout() {
@@ -31,8 +31,8 @@ function authorizeIfRequired() {
   } else {
     var authorizationUrl = graphService.getAuthorizationUrl();
     var template = HtmlService.createTemplate(
-        '<a href="<?= authorizationUrl ?>" target="_blank">Authorize</a>. ' +
-        'Reopen the sidebar when the authorization is complete.');
+      '<a href="<?= authorizationUrl ?>" target="_blank">Authorize</a>. ' +
+      'Reopen the sidebar when the authorization is complete.');
     template.authorizationUrl = authorizationUrl;
     var page = template.evaluate();
     SpreadsheetApp.getUi().showSidebar(page);
@@ -52,15 +52,15 @@ function authCallback(request) {
 
 function makeRequest(url, options) {
   var graphService = getGraphService();
-  
+
   if (options === undefined) {
     options = {};
   }
-  
+
   options.headers = {
-      Authorization: 'Bearer ' + graphService.getAccessToken()
+    Authorization: 'Bearer ' + graphService.getAccessToken()
   };
-  
+
   var response = UrlFetchApp.fetch("https://outlook.office.com/api/v2.0/me/" + url, options);
   return response;
 };
@@ -85,96 +85,126 @@ function test2() {
 };
 
 function formatDate(date) {
-  return date.getFullYear()  + "-" + (date.getMonth() + 1) + "-" + date.getDate()
+  return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()
 };
 
-var Office365Calendar = function() {  
-  this.createEvent = function(title, startTime, endTime) {
-    return null;
+var Office365Calendar = function () {
+  this.createEvent = function (title, startTime, endTime) {
+    var payload = {
+      "Subject": title,
+      "ShowAs": "Oof",
+      "Start": {
+        "DateTime": formatDate(startTime),
+        "TimeZone": "UTC"
+      },
+      "End": {
+        "DateTime": formatDate(endTime),
+        "TimeZone": "UTC"
+      }
+    };
+    var options =
+    {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payload)
+    };
+
+    var response = makeRequest("events", options);
+    var json = JSON.parse(response.getContentText());
+    return new Office365CalendarEvent(json);
   }
-  
-  this.getEventById = function(calendarId) {
+
+  this.getEventById = function (calendarId) {
     if (calendarId === null) {
       return null;
     }
     if (calendarId === "") {
       return null;
     }
-    
+
     try {
       var response = makeRequest("events/" + calendarId);
       var content = response.getContentText();
       var eventData = JSON.parse(content);
       return new Office365CalendarEvent(eventData);
-    } catch(error) {
+    } catch (error) {
       return null;
     }
   };
-  
-  this.getEvents = function(startTime, endTime) {
+
+  this.getEvents = function (startTime, endTime) {
     var response = makeRequest("calendarview?startDateTime=" + formatDate(startTime) + "&endDateTime=" + formatDate(endTime) + "&$select=Subject,Start,End,IsAllDay,ShowAs");
     var content = response.getContentText();
     var eventData = JSON.parse(content).value;
     var events = [];
-    for(var i = 0; i < eventData.length; i++) {
+    for (var i = 0; i < eventData.length; i++) {
       events.push(new Office365CalendarEvent(eventData[i]));
     }
     return events;
   };
-  
-  this.requiresDayAdjustment = function() {
+
+  this.requiresDayAdjustment = function () {
     return true;
   };
-  
-  this.supportsId = function() {
+
+  this.supportsId = function () {
     return true;
   };
-  
-  this.getAdjustment = function() {
+
+  this.getAdjustment = function () {
     return 1;
   };
-  
-  this.getType = function() {
+
+  this.getType = function () {
     return "office365";
   };
 };
 
-var Office365CalendarEvent = function(data) {
+var Office365CalendarEvent = function (data) {
   this.data = data;
-  
-  this.getId = function() {
+
+  this.getId = function () {
     return this.data.Id;
   };
-  
-  this.getTitle = function() {
+
+  this.getTitle = function () {
     return this.data.Subject;
   };
-  
-  this.getStartTime = function() {
+
+  this.getStartTime = function () {
     return new Date(this.data.Start.DateTime.substring(0, 19));
   };
-  
-  this.getEndTime = function() {
+
+  this.getEndTime = function () {
     return new Date(this.data.End.DateTime.substring(0, 19));
   };
-  
-  this.setTime = function(startTime, endTime) {
-    var payload = { 
-            "Start": {
-              "DateTime": formatDate(startTime),
-              "TimeZone": "UTC"
-            },
-            "End": {
-              "DateTime": formatDate(endTime),
-              "TimeZone": "UTC"
-            }
-          };
+
+  this.deleteEvent = function () {
     var options =
-        {
-          "method" : "patch",
-          "contentType" : "application/json",
-          "payload" : JSON.stringify(payload)
-        };
+    {
+      "method": "delete"
+    };
+
+    makeRequest("events/" + this.getId(), options);
+  };
+
+  this.setTime = function (startTime, endTime) {
+    var payload = {
+      "Start": {
+        "DateTime": formatDate(startTime),
+        "TimeZone": "UTC"
+      },
+      "End": {
+        "DateTime": formatDate(endTime),
+        "TimeZone": "UTC"
+      }
+    };
+    var options =
+    {
+      "method": "patch",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payload)
+    };
 
     makeRequest("events/" + this.getId(), options);
   };
