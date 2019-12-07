@@ -3,12 +3,12 @@ function getGraphService() {
   // persisting the authorized token, so ensure it is unique within the
   // scope of the property store.
   return OAuth2.createService('graph')
-    .setAuthorizationBaseUrl("https://login.microsoftonline.com/" + getTenantId() + "/oauth2/v2.0/authorize")
-    .setTokenUrl("https://login.microsoftonline.com/" + getTenantId() + "/oauth2/v2.0/token")
+    .setAuthorizationBaseUrl("https://login.microsoftonline.com/" + Settings.getTenantId() + "/oauth2/v2.0/authorize")
+    .setTokenUrl("https://login.microsoftonline.com/" + Settings.getTenantId() + "/oauth2/v2.0/token")
 
     // Set the client ID and secret, from the Google Developers Console.
-    .setClientId(getClientId())
-    .setClientSecret(getSecret())
+    .setClientId(Settings.getClientId())
+    .setClientSecret(Settings.getSecret())
 
     // Set the name of the callback function in the script referenced
     // above that should be invoked to complete the OAuth flow.
@@ -157,6 +157,10 @@ var Office365Calendar = function () {
 
   this.getType = function () {
     return "office365";
+  };
+
+  this.isReadOnly = function () {
+    return false;
   };
 };
 
