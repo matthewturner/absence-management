@@ -25,7 +25,7 @@ function logout() {
 };
 
 function authorizeIfRequired() {
-  if (Settings.getOffice365CalendarEnabled()) {
+  if (!Settings.getOffice365CalendarEnabled()) {
     return true;
   }
 
@@ -36,8 +36,27 @@ function authorizeIfRequired() {
 
   var authorizationUrl = graphService.getAuthorizationUrl();
   var template = HtmlService.createTemplate(
-    '<a href="<?= authorizationUrl ?>" target="_blank">Authorize</a>. ' +
-    'Reopen the sidebar when the authorization is complete.');
+    '<style>' +
+    '   .button {' +
+    '   background-color: #1c87c9;' +
+    '   border: none;' +
+    '   color: white;' +
+    '   padding: 20px 34px;' +
+    '   text-align: center;' +
+    '   text-decoration: none;' +
+    '   display: inline-block;' +
+    '   font-size: 20px;' +
+    '   margin: 4px 2px;' +
+    '   cursor: pointer;' +
+    '   border-radius: 4px;' +
+    '   }' +
+    '</style>' +
+    '<div>' +
+    '  <a class="button" href="<?= authorizationUrl ?>" target="_blank">Authorize</a>' +
+    '</div>' +
+    '<div>' +
+    'Reopen the sidebar when the authorization is complete.' +
+    '</div>');
   template.authorizationUrl = authorizationUrl;
   var page = template.evaluate();
   SpreadsheetApp.getUi().showSidebar(page);
@@ -48,7 +67,7 @@ function authCallback(request) {
   var graphService = getGraphService();
   var isAuthorized = graphService.handleCallback(request);
   if (isAuthorized) {
-    return HtmlService.createHtmlOutput('Success! You can close this tab.');
+    return HtmlService.createHtmlOutput('Success! You can close this tab');
   } else {
     return HtmlService.createHtmlOutput('Denied. You can close this tab');
   }
