@@ -13,7 +13,7 @@ function getCalendars(sheet) {
 };
 
 function checkEventForActiveRow() {
-  if (Settings.getOffice365CalendarEnabled() && !authorizeIfRequired()) {
+  if (!authorizeIfRequired()) {
     return;
   }
 
@@ -30,7 +30,7 @@ function checkEventForActiveRow() {
 };
 
 function checkEventsForAllRows() {
-  if (Settings.getOffice365CalendarEnabled() && !authorizeIfRequired()) {
+  if (!authorizeIfRequired()) {
     return;
   }
 
@@ -66,7 +66,7 @@ function checkEventsForAllRows() {
 };
 
 function syncEventForActiveRow() {
-  if (Settings.getOffice365CalendarEnabled() && !authorizeIfRequired()) {
+  if (!authorizeIfRequired()) {
     return;
   }
   var sheet = SpreadsheetApp.getActiveSheet();
@@ -81,7 +81,7 @@ function syncEventForActiveRow() {
 };
 
 function deleteEventForActiveRow() {
-  if (Settings.getOffice365CalendarEnabled() && !authorizeIfRequired()) {
+  if (!authorizeIfRequired()) {
     return;
   }
   var sheet = SpreadsheetApp.getActiveSheet();

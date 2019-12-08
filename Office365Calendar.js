@@ -25,19 +25,23 @@ function logout() {
 };
 
 function authorizeIfRequired() {
+  if (Settings.getOffice365CalendarEnabled()) {
+    return true;
+  }
+
   var graphService = getGraphService();
   if (graphService.hasAccess()) {
     return true;
-  } else {
-    var authorizationUrl = graphService.getAuthorizationUrl();
-    var template = HtmlService.createTemplate(
-      '<a href="<?= authorizationUrl ?>" target="_blank">Authorize</a>. ' +
-      'Reopen the sidebar when the authorization is complete.');
-    template.authorizationUrl = authorizationUrl;
-    var page = template.evaluate();
-    SpreadsheetApp.getUi().showSidebar(page);
-    return false;
   }
+
+  var authorizationUrl = graphService.getAuthorizationUrl();
+  var template = HtmlService.createTemplate(
+    '<a href="<?= authorizationUrl ?>" target="_blank">Authorize</a>. ' +
+    'Reopen the sidebar when the authorization is complete.');
+  template.authorizationUrl = authorizationUrl;
+  var page = template.evaluate();
+  SpreadsheetApp.getUi().showSidebar(page);
+  return false;
 };
 
 function authCallback(request) {
