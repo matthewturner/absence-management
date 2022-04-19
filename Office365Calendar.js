@@ -116,6 +116,7 @@ var Office365Calendar = function () {
     var payload = {
       "Subject": title,
       "ShowAs": "Oof",
+      "IsAllDay": true,
       "Start": {
         "DateTime": formatDate(startTime),
         "TimeZone": "UTC"
