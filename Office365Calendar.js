@@ -135,16 +135,16 @@ function formatDate(date) {
 var Office365Calendar = function () {
   this.createEvent = function (title, startTime, endTime) {
     var payload = {
-      Subject: title,
-      ShowAs: "Oof",
-      IsAllDay: true,
-      Start: {
-        DateTime: formatDate(startTime),
-        TimeZone: "GMT",
+      subject: title,
+      showAs: "Oof",
+      isAllDay: true,
+      start: {
+        dateTime: formatDate(startTime),
+        timeZone: "GMT",
       },
-      End: {
-        DateTime: formatDate(endTime),
-        TimeZone: "GMT",
+      end: {
+        dateTime: formatDate(endTime),
+        timeZone: "GMT",
       },
     };
     var options = {
@@ -219,19 +219,19 @@ var Office365CalendarEvent = function (data) {
   this.data = data;
 
   this.getId = function () {
-    return this.data.Id;
+    return this.data.id;
   };
 
   this.getTitle = function () {
-    return this.data.Subject;
+    return this.data.subject;
   };
 
   this.getStartTime = function () {
-    return new Date(this.data.Start.DateTime.substring(0, 19));
+    return new Date(this.data.start.dateTime.substring(0, 19));
   };
 
   this.getEndTime = function () {
-    return new Date(this.data.End.DateTime.substring(0, 19));
+    return new Date(this.data.end.dateTime.substring(0, 19));
   };
 
   this.deleteEvent = function () {
@@ -244,13 +244,13 @@ var Office365CalendarEvent = function (data) {
 
   this.setTime = function (startTime, endTime) {
     var payload = {
-      Start: {
-        DateTime: formatDate(startTime),
-        TimeZone: "GMT",
+      start: {
+        dateTime: formatDate(startTime),
+        timeZone: "GMT",
       },
-      End: {
-        DateTime: formatDate(endTime),
-        TimeZone: "GMT",
+      end: {
+        dateTime: formatDate(endTime),
+        timeZone: "GMT",
       },
     };
     var options = {
