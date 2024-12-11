@@ -16,7 +16,7 @@ function getGraphService() {
 
     // Set the property store where authorized tokens should be persisted.
     .setPropertyStore(PropertiesService.getUserProperties())
-    .setScope('https://outlook.office.com/calendars.readwrite');
+    .setScope('https://graph.microsoft.com/Calendars.ReadWrite');
 };
 
 function logout() {
@@ -84,12 +84,12 @@ function makeRequest(url, options) {
     Authorization: 'Bearer ' + graphService.getAccessToken()
   };
 
-  var response = UrlFetchApp.fetch("https://outlook.office.com/api/v2.0/me/" + url, options);
+  var response = UrlFetchApp.fetch("https://graph.microsoft.com/v1.0/me/" + url, options);
   return response;
 };
 
 function test() {
-  var response = makeRequest("calendarview?startDateTime=2019-12-03&endDateTime=2019-12-04&$select=Subject,Start,End,IsAllDay,ShowAs");
+  var response = makeRequest("calendarview?startDateTime=2024-12-27&endDateTime=2024-12-27&$select=Subject,Start,End,IsAllDay,ShowAs");
   var x = response.getContentText();
   var y = JSON.parse(x);
   var z = 1;
@@ -97,7 +97,7 @@ function test() {
 
 function test2() {
   var calendar = new Office365Calendar();
-  var events = calendar.getEvents(new Date("2020-01-02"), new Date("2020-01-03"));
+  var events = calendar.getEvents(new Date("2024-12-27"), new Date("2024-12-27"));
   var event = events[0];
   var sd = event.getStartTime();
   var d = new Date(sd);
@@ -111,19 +111,19 @@ function formatDate(date) {
   return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()
 };
 
-var Office365Calendar = function () {
-  this.createEvent = function (title, startTime, endTime) {
+var Office365Calendar = function() {
+  this.createEvent = function(title, startTime, endTime) {
     var payload = {
       "Subject": title,
       "ShowAs": "Oof",
       "IsAllDay": true,
       "Start": {
         "DateTime": formatDate(startTime),
-        "TimeZone": "UTC"
+        "TimeZone": "GMT"
       },
       "End": {
         "DateTime": formatDate(endTime),
-        "TimeZone": "UTC"
+        "TimeZone": "GMT"
       }
     };
     var options =
@@ -138,10 +138,11 @@ var Office365Calendar = function () {
     return new Office365CalendarEvent(json);
   }
 
-  this.getEventById = function (calendarId) {
+  this.getEventById = function(calendarId) {
     if (calendarId === null) {
       return null;
     }
+
     if (calendarId === "") {
       return null;
     }
@@ -151,12 +152,12 @@ var Office365Calendar = function () {
       var content = response.getContentText();
       var eventData = JSON.parse(content);
       return new Office365CalendarEvent(eventData);
-    } catch (error) {
+    } catch(error) {
       return null;
     }
   };
 
-  this.getEvents = function (startTime, endTime) {
+  this.getEvents = function(startTime, endTime) {
     var response = makeRequest("calendarview?startDateTime=" + formatDate(startTime) + "&endDateTime=" + formatDate(endTime) + "&$select=Subject,Start,End,IsAllDay,ShowAs");
     var content = response.getContentText();
     var eventData = JSON.parse(content).value;
@@ -167,68 +168,66 @@ var Office365Calendar = function () {
     return events;
   };
 
-  this.requiresDayAdjustment = function () {
+  this.requiresDayAdjustment = function() {
     return true;
   };
 
-  this.supportsId = function () {
+  this.supportsId = function() {
     return true;
   };
 
-  this.getAdjustment = function () {
+  this.getAdjustment = function() {
     return 1;
   };
 
-  this.getType = function () {
+  this.getType = function() {
     return "office365";
   };
 
-  this.isReadOnly = function () {
+  this.isReadOnly = function() {
     return false;
   };
 };
 
-var Office365CalendarEvent = function (data) {
+var Office365CalendarEvent = function(data) {
   this.data = data;
 
-  this.getId = function () {
+  this.getId = function() {
     return this.data.Id;
   };
 
-  this.getTitle = function () {
+  this.getTitle = function() {
     return this.data.Subject;
   };
 
-  this.getStartTime = function () {
+  this.getStartTime = function() {
     return new Date(this.data.Start.DateTime.substring(0, 19));
   };
 
-  this.getEndTime = function () {
+  this.getEndTime = function() {
     return new Date(this.data.End.DateTime.substring(0, 19));
   };
 
-  this.deleteEvent = function () {
-    var options =
-    {
+  this.deleteEvent = function() {
+    var options = {
       "method": "delete"
     };
 
     makeRequest("events/" + this.getId(), options);
   };
 
-  this.setTime = function (startTime, endTime) {
+  this.setTime = function(startTime, endTime) {
     var payload = {
       "Start": {
         "DateTime": formatDate(startTime),
-        "TimeZone": "UTC"
+        "TimeZone": "GMT"
       },
       "End": {
         "DateTime": formatDate(endTime),
-        "TimeZone": "UTC"
+        "TimeZone": "GMT"
       }
     };
-    var options =
-    {
+    var options = {
       "method": "patch",
       "contentType": "application/json",
       "payload": JSON.stringify(payload)
