@@ -75,13 +75,13 @@ var AbsenceEntry = function (sheet, rowIndex) {
 
   this.configure = function () {
     var startDayCell = sheet.getRange(rowIndex, 2);
-    startDayCell.setFormula("=text(C" + rowIndex + ", \"ddd\")");
+    startDayCell.setFormula("=text(C" + rowIndex + ', "ddd")');
     var startTimeCell = sheet.getRange(rowIndex, 3);
     startTimeCell.setNumberFormat("dd/MM/YYYY");
     startTimeCell.setHorizontalAlignment("right");
 
     var startDayCell = sheet.getRange(rowIndex, 4);
-    startDayCell.setFormula("=text(E" + rowIndex + ", \"ddd\")");
+    startDayCell.setFormula("=text(E" + rowIndex + ', "ddd")');
     var endTimeCell = sheet.getRange(rowIndex, 5);
     endTimeCell.setNumberFormat("dd/MM/YYYY");
     endTimeCell.setHorizontalAlignment("right");
@@ -102,10 +102,16 @@ var AbsenceEntry = function (sheet, rowIndex) {
       if (candidateEvent.getTitle() !== this.getTitle()) {
         continue;
       }
-      if (candidateEvent.getStartTime().getTime() !== this.getStartTime().getTime()) {
+      if (
+        candidateEvent.getStartTime().getTime() !==
+        this.getStartTime().getTime()
+      ) {
         continue;
       }
-      if (candidateEvent.getEndTime().getTime() !== this.getAdjustedEndTime(calendar.getAdjustment()).getTime()) {
+      if (
+        candidateEvent.getEndTime().getTime() !==
+        this.getAdjustedEndTime(calendar.getAdjustment()).getTime()
+      ) {
         continue;
       }
       return candidateEvent;

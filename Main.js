@@ -10,7 +10,7 @@ function getCalendars(sheet) {
     calendars.push(new HrCalendar(sheet));
   }
   return calendars;
-};
+}
 
 function checkEventForActiveRow() {
   if (!authorizeIfRequired()) {
@@ -27,7 +27,7 @@ function checkEventForActiveRow() {
     var calendar = calendars[i];
     new Synchronizer(entry, calendar).markSynchronized();
   }
-};
+}
 
 function checkEventsForAllRows() {
   if (!authorizeIfRequired()) {
@@ -63,7 +63,7 @@ function checkEventsForAllRows() {
         break;
     }
   }
-};
+}
 
 function syncEventForActiveRow() {
   if (!authorizeIfRequired()) {
@@ -78,7 +78,7 @@ function syncEventForActiveRow() {
     var calendar = calendars[i];
     new Synchronizer(entry, calendar).synchronize();
   }
-};
+}
 
 function deleteEventForActiveRow() {
   if (!authorizeIfRequired()) {
@@ -93,7 +93,7 @@ function deleteEventForActiveRow() {
     var calendar = calendars[i];
     deleteEventIfRequired(calendar, entry);
   }
-};
+}
 
 function deleteEventIfRequired(calendar, entry) {
   if (calendar.isReadOnly()) {
@@ -107,7 +107,7 @@ function deleteEventIfRequired(calendar, entry) {
   var calendarType = calendar.getType();
   entry.setCalendarId(calendarType, null);
   entry.markCalendarConflict(calendarType, "Event missing");
-};
+}
 
 function configureActiveRow() {
   var sheet = SpreadsheetApp.getActiveSheet();
@@ -115,7 +115,7 @@ function configureActiveRow() {
   var entry = new AbsenceEntry(sheet, rowIndex);
 
   entry.configure();
-};
+}
 
 /**
  * Adds a custom menu to the active spreadsheet, containing a single menu item
@@ -130,34 +130,34 @@ function onOpen() {
   var entries = [
     {
       name: "Check all rows",
-      functionName: "checkEventsForAllRows"
+      functionName: "checkEventsForAllRows",
     },
     {
       name: "Configure active row",
-      functionName: "configureActiveRow"
+      functionName: "configureActiveRow",
     },
     {
       name: "Check event for active row",
-      functionName: "checkEventForActiveRow"
+      functionName: "checkEventForActiveRow",
     },
     {
       name: "Sync event for active row",
-      functionName: "syncEventForActiveRow"
+      functionName: "syncEventForActiveRow",
     },
     {
       name: "Delete event for active row",
-      functionName: "deleteEventForActiveRow"
-    }
+      functionName: "deleteEventForActiveRow",
+    },
   ];
   if (Settings.getOffice365CalendarEnabled()) {
     entries.push({
       name: "Authorize access to Office 365",
-      functionName: "authorizeIfRequired"
+      functionName: "authorizeIfRequired",
     });
     entries.push({
       name: "Logout from Office 365",
-      functionName: "logout"
+      functionName: "logout",
     });
   }
   sheet.addMenu("Calendar", entries);
-};
+}

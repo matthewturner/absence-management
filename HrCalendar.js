@@ -1,5 +1,7 @@
 var HrCalendar = function (sheet) {
-  this.hrSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheet.getSheetName() + " - HR");
+  this.hrSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+    sheet.getSheetName() + " - HR"
+  );
 
   this.getAllEvents = function () {
     var range = this.hrSheet.getDataRange();
@@ -52,7 +54,7 @@ var HrCalendar = function (sheet) {
   this.isReadOnly = function () {
     return true;
   };
-}
+};
 
 var HrCalendarEvent = function (row) {
   this.row = row;
@@ -70,6 +72,6 @@ var HrCalendarEvent = function (row) {
   };
 
   this.getEndTime = function () {
-    return new Date(this.row[5])
+    return new Date(this.row[5]);
   };
 };

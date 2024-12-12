@@ -26,16 +26,28 @@ var Synchronizer = function (entry, calendar) {
       Logger.log("Title mismatch");
       conflicts.push("Title mismatch");
     }
-    if (event.getStartTime().getTime() !== this.entry.getStartTime().getTime()) {
-      var conflict = "Start date mismatch: " + event.getStartTime().getTime() + " vs " + this.entry.getStartTime().getTime();
+    if (
+      event.getStartTime().getTime() !== this.entry.getStartTime().getTime()
+    ) {
+      var conflict =
+        "Start date mismatch: " +
+        event.getStartTime().getTime() +
+        " vs " +
+        this.entry.getStartTime().getTime();
       Logger.log(conflict);
       conflicts.push(conflict);
     }
 
     var eventEndTime = event.getEndTime();
-    var entryEndTime = this.entry.getAdjustedEndTime(this.calendar.getAdjustment());
+    var entryEndTime = this.entry.getAdjustedEndTime(
+      this.calendar.getAdjustment()
+    );
     if (eventEndTime.getTime() !== entryEndTime.getTime()) {
-      var conflict = "End date mismatch: " + eventEndTime.getTime() + " vs " + entryEndTime.getTime();
+      var conflict =
+        "End date mismatch: " +
+        eventEndTime.getTime() +
+        " vs " +
+        entryEndTime.getTime();
       Logger.log(conflict);
       conflicts.push(conflict);
     }
@@ -60,7 +72,11 @@ var Synchronizer = function (entry, calendar) {
       if (calendar.isReadOnly()) {
         this.entry.markCalendarConflict(calendarType, "Event missing");
       } else {
-        var event = this.calendar.createEvent(this.entry.getTitle(), this.entry.getStartTime(), this.entry.getAdjustedEndTime(this.calendar.getAdjustment()));
+        var event = this.calendar.createEvent(
+          this.entry.getTitle(),
+          this.entry.getStartTime(),
+          this.entry.getAdjustedEndTime(this.calendar.getAdjustment())
+        );
         this.entry.setCalendarId(calendarType, event.getId());
         this.entry.clearCalendarConflict(calendarType);
       }
@@ -75,8 +91,15 @@ var Synchronizer = function (entry, calendar) {
       event.setTitle(this.entry.getTitle());
     }
 
-    if (event.getStartTime().getTime() !== this.entry.getStartTime().getTime() || event.getEndTime().getTime() !== this.entry.getAdjustedEndTime(this.calendar.getAdjustment()).getTime()) {
-      event.setTime(this.entry.getStartTime(), this.entry.getAdjustedEndTime(this.calendar.getAdjustment()));
+    if (
+      event.getStartTime().getTime() !== this.entry.getStartTime().getTime() ||
+      event.getEndTime().getTime() !==
+        this.entry.getAdjustedEndTime(this.calendar.getAdjustment()).getTime()
+    ) {
+      event.setTime(
+        this.entry.getStartTime(),
+        this.entry.getAdjustedEndTime(this.calendar.getAdjustment())
+      );
     }
 
     this.entry.clearCalendarConflict(calendarType);

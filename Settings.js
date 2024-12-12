@@ -21,5 +21,5 @@ var Settings = {
 
   getTenantId: function () {
     return "..........";
-  }
+  },
 };
